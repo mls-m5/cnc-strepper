@@ -61,6 +61,8 @@ struct Location {
 Location position;
 const array<int, 4> axisPins = {STEP, STEP2, -1, -1};
 const array<int, 4> directionPins {DIR, DIR2, -1, -1};
+const array<int, 4> stepsPerMM = {300, 300, 300, 300};
+const array<int, 4> maxSpeed = {300 / 10, 300 / 10, 300, 300};
 
 struct Argument {
 	char name;
@@ -89,16 +91,16 @@ struct Command {
 				//Wait for input
 			}
 			c = Serial.read();
-			//if (c == 10) {
-			//  break;
-			//}
 			if (c >= 'A' && c <= 'Z') {
 				Argument argument;
 				argument.name = c;
-				//Serial.println("new argument");
 				auto p = Serial.peek();
 				if ((p >= '0' && p <= '9') || p == '.') {
 					argument.value = Serial.parseFloat();
+				}
+				else if (p == '-') {
+					Serial.read(); //Throw away the - char
+					argument.value = -Serial.parseFloat();
 				}
 				else {
 					argument.hasValue = false;
@@ -126,6 +128,17 @@ struct Command {
 			return def;
 		}
 	}
+
+	float getArgumentValue(char name, float def, float multiplier) {
+		auto arg = getArgument(name);
+		if (arg) {
+			return arg->value * multiplier;
+		}
+		else {
+			return def;
+		}
+	}
+
 
 	void print() {
 		printChar(command);
@@ -170,15 +183,29 @@ struct G1Command: public Command {
 	Location from;
 	Location direction;
 	long operationLength = 1000000;
+	long realLength = 0;
 	long progress = 0;
 
+	long speedAmount = 100;
+	long rampLength = 100000;
+
 	bool operator()(int dt) override {
-		progress += dt;
+		realLength += dt;
+		if (realLength < rampLength) {
+			speedAmount = 100 * realLength / rampLength;
+		}
+		else {
+			speedAmount = 100;
+		}
+		progress += dt * speedAmount / 100;
 		debug("dt ");
 		debugln(dt);
 
 		debug("progress:\t");
 		debugln(100 * progress / operationLength);
+
+		debug("\tspeed %:\t");
+		debug(speedAmount);
 		fori(i, direction) {
 			position[i] = from[i] + direction[i] * progress / operationLength;
 			if (axisPins[i] > -1) {
@@ -204,52 +231,60 @@ struct G1Command: public Command {
 		Serial.println("started linear motion");
 
 		if (absolutePositioning) { //Absolute positioning
-			target.x = getArgumentValue('X', position.x);
-			target.y = getArgumentValue('Y', position.y);
-			target.z = getArgumentValue('Z', position.z);
-			target.e = getArgumentValue('E', position.e);
+			target.x = getArgumentValue('X', position.x, stepsPerMM[0]);
+			target.y = getArgumentValue('Y', position.y, stepsPerMM[1]);
+			target.z = getArgumentValue('Z', position.z, stepsPerMM[2]);
+			target.e = getArgumentValue('E', position.e, stepsPerMM[3]);
 
 			if (target.x == position.x && target.y == position.y && target.z == position.z && target.e == position.e) {
 				Serial.println(F("Already at target position"));
 			}
 		}
 		else {
-			target.x = position.x + getArgumentValue('X', 0);
-			target.y = position.y + getArgumentValue('Y', 0);
-			target.z = position.z + getArgumentValue('Z', 0);
-			target.e = position.e + getArgumentValue('E', 0);
+			target.x = position.x + getArgumentValue('X', 0, stepsPerMM[0]);
+			target.y = position.y + getArgumentValue('Y', 0, stepsPerMM[1]);
+			target.z = position.z + getArgumentValue('Z', 0, stepsPerMM[2]);
+			target.e = position.e + getArgumentValue('E', 0, stepsPerMM[3]);
 		}
 
-		Serial.println("moving to: ");
-		Serial.println(target.x);
-		Serial.println(target.y);
-		Serial.println(target.z);
-		Serial.println(target.e);
-
+		debugln("moving to: ");
+		debugln(target.x);
+		debugln(target.y);
+		debugln(target.z);
+		debugln(target.e);
 
 		fori(i, direction) {
 			from[i] = position[i];
-			Serial.println("loop");
-			Serial.println(position[i]);
-			Serial.println(from[i]);
+			debugln("loop");
+			debugln(position[i]);
+			debugln(from[i]);
 			direction[i] = target[i] - position[i];
 			if (directionPins[i] > -1) {
 				digitalWrite(directionPins[i], direction[i] > 0);
 			}
 		}
 
-		Serial.println("moving from: ");
-		Serial.println(from.x);
-		Serial.println(from.y);
-		Serial.println(from.z);
-		Serial.println(from.e);
+		debugln("moving from: ");
+		debugln(from.x);
+		debugln(from.y);
+		debugln(from.z);
+		debugln(from.e);
 
-		Serial.println("direction : ");
-		Serial.println(direction.x);
-		Serial.println(direction.y);
-		Serial.println(direction.z);
-		Serial.println(direction.e);
+		debugln("direction : ");
+		debugln(direction.x);
+		debugln(direction.y);
+		debugln(direction.z);
+		debugln(direction.e);
 
+		operationLength = 0;
+		fori (i, direction) {
+			auto l = abs(direction[i]) * (1000 * 3 / 2);// * 1000 / maxSpeed[i];
+			if (l > operationLength) {
+				operationLength = l;
+			}
+		}
+//		Serial.print("operation length");
+//		Serial.println(operationLength);
 	}
 };
 
@@ -280,13 +315,13 @@ void processInput() {
 			while (c != 10 && Serial.available() > 0) {
 				c = Serial.read();
 			}
-			Serial.println("removed comment");
+			debugln("removed comment");
 		}
 		if (c == '(') {
 			while (c != ')' && Serial.available() > 0) {
 				c = Serial.read();
 			}
-			Serial.println("removed comment");
+			debugln("removed comment");
 		}
 		else if (c >= 'A' && c <= 'Z') {
 			Command *command = nullptr;
@@ -326,7 +361,6 @@ unsigned long previousMicros;
 void setup() {
 	// initialize the digital pin as an output.
 	pinMode(led, OUTPUT);
-
 
 	for (auto pin: axisPins) {
 		pinMode(pin, OUTPUT);
@@ -371,12 +405,12 @@ void loop() {
 namespace std {
 void __throw_bad_alloc()
 {
-	Serial.println("Unable to allocate memory");
+	Serial.println(F("Unable to allocate memory"));
 }
 
 void __throw_length_error( char const*e )
 {
-	Serial.print("Length Error :");
+	Serial.print(F("Length Error :"));
 	Serial.println(e);
 }
 }
