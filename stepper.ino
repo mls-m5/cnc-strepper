@@ -390,22 +390,27 @@ void loop() {
 
 		if (finished) {
 			commands.pop();
-			Serial.print("command finished");
+			Serial.println("command finished");
 		}
 		previousMicros = currentMicros;
 	}
 }
 
 
+
+// This is to avoid error messages when compiling from command line
 namespace std {
 void __throw_bad_alloc()
 {
 	Serial.println(F("Unable to allocate memory"));
+	while (true) ; // for noreturn, a better alternative than 
+ //abort(); // for "noreturn"
 }
-
 void __throw_length_error( char const*e )
 {
 	Serial.print(F("Length Error :"));
 	Serial.println(e);
+	while (true) ;
+  //abort();
 }
 }
