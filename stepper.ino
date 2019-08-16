@@ -30,10 +30,15 @@ using namespace std;
 // Pin 13 has the LED on Teensy 3.0
 // give it a name:
 int led = 13;
+
+//the pins for the stepper motors
 int STEP = 2;
 int DIR = 3;
 int STEP2 = 4;
 int DIR2 = 5;
+int STEP3 = 6;
+int DIR3 = 7;
+
 int stepLength = 100 / 2 * 10;
 int phaseSize = 200;
 float phase = 0;
@@ -54,10 +59,10 @@ struct Location {
 };
 
 Location position;
-const array<int, 4> axisPins = {STEP, STEP2, -1, -1};
-const array<int, 4> directionPins {DIR, DIR2, -1, -1};
+const array<int, 4> axisPins = {STEP, STEP2, STEP3, -1}; // -1 means unset
+const array<int, 4> directionPins {DIR, DIR2, DIR3, -1}; // -1 means unset
 const array<int, 4> stepsPerMM = {300, 300, 300, 300};
-const array<int, 4> maxSpeed = {300 / 10, 300 / 10, 300, 300};
+const array<int, 4> maxSpeed = {300 / 10, 300 / 10, 300 / 10, 300};
 
 struct Argument {
 	char name;
@@ -153,6 +158,12 @@ struct Command {
 			switch (number) {
 			case 1:
 				Serial.print("linear motion");
+				if (absolutePositioning) {
+					Serial.print(" absolute positioning");
+				}
+				else {
+					Serial.print(" relative positioning");
+				}
 				break;
 			}
 			break;
