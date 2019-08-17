@@ -7,6 +7,8 @@
 #include <array>
 
 #include <signal.h>
+#include <limits>
+#include <cmath> // isnan
 
 
 //#define DEBUG
@@ -46,6 +48,10 @@ float speed = 1;
 
 bool absolutePositioning = true;
 
+unsigned long previousMicros;
+int previousCommand = 'G';
+int previousCommandNumber = 1;
+
 struct Location {
 	long x, y, z, e;
 
@@ -76,6 +82,22 @@ void printChar(char c) {
 }
 
 
+// A function that reads float (both positive and negative) from the serial port
+float readFloat() {
+	auto p = Serial.peek();
+	if ((p >= '0' && p <= '9') || p == '.') {
+		return Serial.parseFloat();
+	}
+	else if (p == '-') {
+		Serial.read(); //Throw away the - char
+		return -Serial.parseFloat();
+	}
+	else {
+		return std::numeric_limits<float>::quiet_NaN();
+	}
+}
+
+
 struct Command {
 	char command;
 	virtual ~Command() {}
@@ -94,17 +116,24 @@ struct Command {
 			if (c >= 'A' && c <= 'Z') {
 				Argument argument;
 				argument.name = c;
-				auto p = Serial.peek();
-				if ((p >= '0' && p <= '9') || p == '.') {
-					argument.value = Serial.parseFloat();
-				}
-				else if (p == '-') {
-					Serial.read(); //Throw away the - char
-					argument.value = -Serial.parseFloat();
-				}
-				else {
+				auto value = readFloat();
+				if (std::isnan(value)) {
 					argument.hasValue = false;
 				}
+				else {
+					argument.value = value;
+				}
+//				auto p = Serial.peek();
+//				if ((p >= '0' && p <= '9') || p == '.') {
+//					argument.value = Serial.parseFloat();
+//				}
+//				else if (p == '-') {
+//					Serial.read(); //Throw away the - char
+//					argument.value = -Serial.parseFloat();
+//				}
+//				else {
+//					argument.hasValue = false;
+//				}
 				arguments.push_back(argument);
 			}
 		}
@@ -309,6 +338,8 @@ struct PositioningCommand: public SingleCommand {
 
 std::queue<unique_ptr<Command>> commands;
 
+
+// Reads input form serial in and create a queue with commands
 void processInput() {
 	if (Serial.available() <= 0) {
 		return;
@@ -316,22 +347,48 @@ void processInput() {
 	while (Serial.available() > 0) {
 		// read the incoming byte:
 		int c = Serial.read();
+		c = toupper(c);
 
-		if (c == '#') {
+		if (c == ';') {
 			while (c != 10 && Serial.available() > 0) {
 				c = Serial.read();
 			}
 			debugln("removed comment");
 		}
-		if (c == '(') {
+		else if (c == '(') {
 			while (c != ')' && Serial.available() > 0) {
 				c = Serial.read();
 			}
 			debugln("removed comment");
 		}
-		else if (c >= 'A' && c <= 'Z') {
+		else if ((c >= 'A' && c <= 'Z') || c == ' ') {
 			Command *command = nullptr;
-			int number = Serial.parseInt();
+			int number;
+
+			Argument argument; //If this is is shorthand notation, values is stored here
+			argument.name = 0;
+
+			if (c >= 'X' && c <= 'Z') {
+				argument.name = c;
+				argument.value = readFloat();
+				if (std::isnan(argument.value)) {
+					argument.hasValue = false;
+				}
+
+				c = previousCommand;
+				number = previousCommandNumber;
+				Serial.println("reusing previous command ");
+
+				char prevString[] = {(char)c, 0};
+				Serial.print(prevString);
+				Serial.println(previousCommandNumber);
+
+			}
+			else {
+				previousCommand = c;
+				previousCommandNumber = number = Serial.parseInt();
+			}
+
 
 			switch (c) {
 			case 'G':
@@ -352,6 +409,10 @@ void processInput() {
 			if (command) {
 				command->command = c;
 				command->number = number;
+
+				if (argument.name != 0) {
+					command->arguments.push_back(argument);
+				}
 				command->parseArguments();
 
 				command->print();
@@ -361,7 +422,6 @@ void processInput() {
 	}
 }
 
-unsigned long previousMicros;
 
 // the setup routine runs once when you press reset:
 void setup() {
@@ -397,7 +457,7 @@ void loop() {
 
 		auto currentMicros = micros();
 		auto d = currentMicros - previousMicros;
-		auto finished = command(d);
+		auto finished = command(d); // Do command stuff
 
 		if (finished) {
 			commands.pop();
