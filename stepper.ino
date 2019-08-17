@@ -123,17 +123,6 @@ struct Command {
 				else {
 					argument.value = value;
 				}
-//				auto p = Serial.peek();
-//				if ((p >= '0' && p <= '9') || p == '.') {
-//					argument.value = Serial.parseFloat();
-//				}
-//				else if (p == '-') {
-//					Serial.read(); //Throw away the - char
-//					argument.value = -Serial.parseFloat();
-//				}
-//				else {
-//					argument.hasValue = false;
-//				}
 				arguments.push_back(argument);
 			}
 		}
@@ -232,6 +221,9 @@ struct G1Command: public Command {
 		else {
 			speedAmount = 100;
 		}
+		
+		// Todo: Make sure that step not is to long here
+		
 		progress += dt * speedAmount / 100;
 		debug("dt ");
 		debugln(dt);
@@ -485,3 +477,4 @@ void __throw_length_error( char const*e )
   //abort();
 }
 }
+

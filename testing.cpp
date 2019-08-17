@@ -1,4 +1,7 @@
 
+// Do not include in standard arduino project
+#ifndef ARDUINO
+
 #define F(x) x
 
 #include <iostream>
@@ -81,12 +84,15 @@ public:
 				}
 				buffer.push(10); //Newline
 			}
+			isRunning = false; // Close the program when stdin ends
 		});
 	}
 
 	std::thread iothread;
 
 	std::mutex iomutex;
+
+	bool isRunning = true;
 } Serial;
 
 unsigned long micros() {
@@ -104,15 +110,60 @@ unsigned long micros() {
 #define INPUT 0
 #define OUTPUT 1
 
+class StepperMock{
+public:
+	float angle = 0;
+	bool direction = 1;
+	bool tick = 0;
+	std::string name;
+
+	StepperMock(const char * name): name(name) {
+	}
+
+	void setDir(bool val) {
+		direction = val;
+	}
+	void setPin(bool val) {
+		if (tick != val) {
+			angle += (direction)? 1./300: -1./300;
+			cout << "new angle " << name << " = " << angle << endl;
+		}
+		tick = val;
+	}
+};
+StepperMock stepper[4] = {"X", "Y", "Z", "E"};
+
 void digitalWrite(int pin, int state) {
-	if (pin == 2) { // only show one pin
-		cout << "pin " << pin << " <- " << state << endl;
+//	if (pin == 2) { // only show one pin
+	cout << "pin " << pin << " <- " << state << endl;
+//	}
+	if (pin == 2) {
+		stepper[0].setPin(state);
+	}
+	else if (pin == 3) {
+		stepper[0].setDir(state);
+	}
+
+	if (pin == 4) {
+		stepper[1].setPin(state);
+	}
+	else if (pin == 5) {
+		stepper[1].setDir(state);
+	}
+
+	if (pin == 6) {
+		stepper[2].setPin(state);
+	}
+	else if (pin == 7) {
+		stepper[2].setDir(state);
 	}
 }
 
 void pinMode(int pin, int mode) {
 	cout << "setting mode for " << pin << " to " << mode << endl;
 }
+
+#define DEBUG
 
 #include "stepper.ino"
 
@@ -122,10 +173,12 @@ int main(int argc, char const *argv[]) {
 
 	Serial.startThread();
 
-	while(true) {
+	while(Serial.isRunning) {
 		loop();
-		std::this_thread::sleep_for(1us);
+		std::this_thread::sleep_for(1us); // Prevent program from using 100% cpu
 	}
 
 	return 0;
 }
+
+#endif
