@@ -2,3 +2,9 @@
 .cproject
 .project
 .settings/
+
+mill.*
+.pio/
+.vscode/
+
+sim

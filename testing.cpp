@@ -168,7 +168,7 @@ void pinMode(int pin, int mode) {
 
 #define DEBUG
 
-#include "mill.ino"
+#include "src/mill.cpp"
 
 int main(int /*argc*/, char const ** /*argv*/) {
     using namespace std::chrono_literals;
