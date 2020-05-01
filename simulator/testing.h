@@ -2,6 +2,12 @@
 
 #pragma once
 
+#ifdef ARDUINO
+
+#include <Arduino.h>
+
+#else
+
 #define F(x) x
 
 #include <chrono>
@@ -15,7 +21,7 @@ using std::cin;
 using std::cout;
 using std::endl;
 
-class {
+class SerialImpl {
 public:
     template <class T>
     void print(T value) {
@@ -75,9 +81,8 @@ public:
 
     void startThread() {
         iothread = std::thread([this]() {
-            while (cin) {
-                std::string line;
-                std::getline(cin, line);
+            std::string line;
+            while (std::getline(cin, line)) {
                 std::unique_lock<std::mutex> g(iomutex);
                 for (auto c : line) {
                     buffer.push(c);
@@ -93,17 +98,11 @@ public:
     std::mutex iomutex;
 
     bool isRunning = true;
-} Serial;
+};
 
-unsigned long micros() {
-    using namespace std::chrono;
+extern SerialImpl Serial;
 
-    auto now = high_resolution_clock::now();
-    auto since_epoch = now.time_since_epoch();
-    auto micros = std::chrono::duration_cast<microseconds>(since_epoch);
-
-    return static_cast<unsigned long>(micros.count());
-}
+unsigned long micros();
 
 #define LOW 0
 #define HIGH 1
@@ -141,32 +140,11 @@ namespace {
 StepperMock stepper[4] = {"X", "Y", "Z", "E"};
 }
 
-void digitalWrite(int pin, int state) {
-    //	if (pin == 2) { // only show one pin
-    cout << "pin " << pin << " <- " << state << endl;
-    //	}
-    if (pin == 2) {
-        stepper[0].setPin(state);
-    }
-    else if (pin == 3) {
-        stepper[0].setDir(state);
-    }
+void digitalWrite(int pin, int state);
 
-    if (pin == 4) {
-        stepper[1].setPin(state);
-    }
-    else if (pin == 5) {
-        stepper[1].setDir(state);
-    }
+void pinMode(int pin, int mode);
 
-    if (pin == 6) {
-        stepper[2].setPin(state);
-    }
-    else if (pin == 7) {
-        stepper[2].setDir(state);
-    }
-}
+void setup();
+void loop();
 
-void pinMode(int pin, int mode) {
-    cout << "setting mode for " << pin << " to " << mode << endl;
-}
+#endif

@@ -3,7 +3,7 @@ config += c++14
 
 libs = -pthread -lGL -lSDL2 -lSDL2_image
 
-includes += matgui/include
+includes += matgui/include ../src ../simulator
 
-sim.src = *.cpp
+sim.src = *.cpp ../src/*.cpp
 sim.src += matgui/src/*.cpp
