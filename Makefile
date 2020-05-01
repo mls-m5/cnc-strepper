@@ -9,5 +9,5 @@ upload:
 	platformio run --target upload
 	arduino  --upload stepper.ino | sed "s/stepper:/stepper.ino:/g"
 
-sim: #testing.cpp src/mill.cpp
-	c++ testing.cpp -std=c++17 -o sim -g -pthread
+simulation:
+   make -C simulation

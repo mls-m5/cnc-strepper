@@ -1,0 +1,9 @@
+
+config += c++14
+
+libs = -pthread -lGL -lSDL2 -lSDL2_image
+
+includes += matgui/include
+
+sim.src = *.cpp
+sim.src += matgui/src/*.cpp

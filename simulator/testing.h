@@ -1,6 +1,6 @@
+// Copyright © Mattias Larsson Sköld 2020
 
-// Do not include in standard arduino project
-#ifndef ARDUINO
+#pragma once
 
 #define F(x) x
 
@@ -111,26 +111,31 @@ unsigned long micros() {
 #define OUTPUT 1
 
 class StepperMock {
-public:
-    std::string name;
-    float angle = 0;
-    bool direction = 1;
-    bool tick = 0;
+    std::string _name;
+    float _angle = 0;
+    bool _direction = 1;
+    bool _tick = 0;
 
-    StepperMock(const char *name) : name(name) {
-    }
+public:
+    StepperMock(const char *name) : _name(name) {}
 
     void setDir(bool val) {
-        direction = val;
+        _direction = val;
     }
+
     void setPin(bool val) {
-        if (tick != val) {
-            angle += (direction) ? 1. / 300 : -1. / 300;
-            cout << "new angle " << name << " = " << angle << endl;
+        if (_tick != val) {
+            _angle += (_direction) ? 1. / 300 : -1. / 300;
+            cout << "new angle " << _name << " = " << _angle << endl;
         }
-        tick = val;
+        _tick = val;
+    }
+
+    auto angle() {
+        return _angle;
     }
 };
+
 namespace {
 
 StepperMock stepper[4] = {"X", "Y", "Z", "E"};
@@ -165,26 +170,3 @@ void digitalWrite(int pin, int state) {
 void pinMode(int pin, int mode) {
     cout << "setting mode for " << pin << " to " << mode << endl;
 }
-
-#define DEBUG
-
-#include "src/mill.cpp"
-
-int main(int /*argc*/, char const ** /*argv*/) {
-    using namespace std::chrono_literals;
-    setup();
-
-    Serial.startThread();
-
-    while (Serial.isRunning) {
-        loop();
-        std::this_thread::sleep_for(1ms); // Prevent program from using 100% cpu
-                                          // this should make the loop to slow
-        //		std::this_thread::sleep_for(10us); // Prevent program
-        // from using 100% cpu this should not be any problem
-    }
-
-    return 0;
-}
-
-#endif
