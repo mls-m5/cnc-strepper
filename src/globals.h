@@ -2,11 +2,18 @@
 
 #pragma once
 
+#include "command.h"
 #include "location.h"
 #include <array>
 
 #include <memory>
 #include <queue>
+
+enum class PositioningType {
+    Default, // Use whatever is in the config
+    Absolute,
+    Relative,
+};
 
 namespace globals {
 
@@ -24,19 +31,23 @@ constexpr int STEP2 = 4;
 constexpr int DIR2 = 5;
 constexpr int STEP3 = 6;
 constexpr int DIR3 = 7;
-
-extern bool absolutePositioning;
-
-extern Location position;
 extern const std::array<int, 4> axisPins;
 extern const std::array<int, 4> directionPins;
 extern const std::array<int, 4> stepsPerMM;
 extern const std::array<int, 4> maxSpeed;
 
-extern unsigned long previousMicros;
-extern int previousCommand;
-extern int previousCommandNumber;
+struct Config {
 
-extern std::queue<std::unique_ptr<class Command>> commands;
+    PositioningType positioningType;
+
+    Location position;
+    unsigned long previousMicros;
+    int previousCommand;
+    int previousCommandNumber;
+
+    std::queue<std::unique_ptr<class Command>> commands;
+};
+
+extern Config config;
 
 } // namespace globals

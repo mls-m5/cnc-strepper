@@ -10,7 +10,14 @@ struct Argument {
     float value = 0;
 };
 
+namespace globals {
+
+class Config;
+}
+
 struct Command {
+    enum Status { Finished, Running };
+
     char command;
     virtual ~Command() {}
 
@@ -30,8 +37,8 @@ struct Command {
 
     void print();
 
-    virtual bool operator()(int dt) = 0;
+    virtual Status operator()(int dt) = 0;
 
     //! @returns true if success, returns false if command should be skipped
-    virtual bool init() = 0;
+    virtual Status init(globals::Config &) = 0;
 };

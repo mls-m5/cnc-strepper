@@ -5,7 +5,7 @@
 #include "command.h"
 
 struct SingleCommand : Command {
-    bool operator()(int dt) override {
-        return true;
+    Status operator()(int dt) override {
+        return Finished;
     }
 };

@@ -8,26 +8,28 @@
 #include <memory>
 
 using namespace std;
-using namespace globals;
 
 namespace {
 
-struct PositioningCommand : public SingleCommand {
-    PositioningCommand(bool positioningType)
-        : positioningType(positioningType) {}
-    bool init() override {
+class PositioningCommand : public SingleCommand {
+    PositioningType _positioningType;
+
+public:
+    PositioningCommand(PositioningType positioningType)
+        : _positioningType(positioningType) {}
+
+    Status init(globals::Config &config) override {
         arguments.clear();
         debug(F("Setting absolute positioning to "));
-        debugln(positioningType);
-        absolutePositioning = positioningType;
-        return true;
+        debugln(_positioningType == PositioningType::Absolute ? "absolute"
+                                                              : "relative");
+        config.positioningType = _positioningType;
+        return Finished;
     }
-
-    bool positioningType;
 };
 
 } // namespace
 
-unique_ptr<SingleCommand> createPositionCommand(bool type) {
+unique_ptr<SingleCommand> createPositionCommand(PositioningType type) {
     return make_unique<PositioningCommand>(type);
 }

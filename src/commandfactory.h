@@ -6,6 +6,9 @@
 
 #include <memory>
 
-std::unique_ptr<SingleCommand> createPositionCommand(bool type);
+std::unique_ptr<SingleCommand> createPositionCommand(PositioningType type);
 
-std::unique_ptr<Command> createG1Command();
+std::unique_ptr<Command> createG1Command(
+    PositioningType PositioningType = PositioningType::Default);
+
+enum class ArcDirection { Clockwise, CounterClockwise };

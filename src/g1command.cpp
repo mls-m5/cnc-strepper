@@ -9,7 +9,6 @@
 #include <cmath>
 
 using namespace std;
-using namespace globals;
 
 #define fori(i, o) for (size_t i = 0; i < o.size(); ++i)
 
@@ -38,7 +37,15 @@ struct G1Command : public Command {
     long speedAmount = 100;
     long rampLength = 100000;
 
+    PositioningType _positioningType = PositioningType::Default;
+
     std::array<bool, 4> oldValues = {};
+
+    globals::Config *config = nullptr;
+
+public:
+    G1Command(PositioningType positioningType)
+        : _positioningType(positioningType) {}
 
     inline void printStepDebugInfo(long progressStep, long dt) const {
         debug("progresstep: ");
@@ -74,7 +81,7 @@ struct G1Command : public Command {
         }
     }
 
-    bool operator()(int dt) override {
+    Status operator()(int dt) override {
         using namespace globals;
         realLength += dt;
         if (realLength < rampLength) {
@@ -92,6 +99,8 @@ struct G1Command : public Command {
 
         progress += progressStep;
 
+        auto &position = config->position;
+
         fori(i, direction) {
             // Without uint64_t this owerflows:
             position[i] =
@@ -108,11 +117,13 @@ struct G1Command : public Command {
 
         printStepDebugInfo(progressStep, dt);
 
-        return progress > operationLength;
+        return (progress > operationLength) ? Finished : Running;
     }
 
     Location getTargetFromArguments() {
-        return Location{
+        using globals::stepsPerMM;
+        const auto &position = config->position;
+        return {
             .x = getArgumentValueInt('X', position.x, stepsPerMM[0]),
             .y = getArgumentValueInt('Y', position.y, stepsPerMM[1]),
             .z = getArgumentValueInt('Z', position.z, stepsPerMM[2]),
@@ -121,15 +132,19 @@ struct G1Command : public Command {
     }
 
     Location getRelativeTargetFromArguments() {
-        return Location{
-            .x = getArgumentValueInt('X', position.x, stepsPerMM[0]),
-            .y = getArgumentValueInt('Y', position.y, stepsPerMM[1]),
-            .z = getArgumentValueInt('Z', position.z, stepsPerMM[2]),
-            .e = getArgumentValueInt('E', position.e, stepsPerMM[3]),
+        using globals::stepsPerMM;
+        const auto &position = config->position;
+        return {
+            .x = position.x + getArgumentValueInt('X', 0, stepsPerMM[0]),
+            .y = position.y + getArgumentValueInt('Y', 0, stepsPerMM[1]),
+            .z = position.z + getArgumentValueInt('Z', 0, stepsPerMM[2]),
+            .e = position.e + getArgumentValueInt('E', 0, stepsPerMM[3]),
         };
     }
 
     void setDirectionPins() {
+        using globals::directionPins;
+        const auto &position = config->position;
         fori(i, direction) {
             direction[i] = target[i] - position[i];
             if (directionPins[i] > -1) {
@@ -143,6 +158,7 @@ struct G1Command : public Command {
         debugln("moving to: ");
         debugLocation(target);
 
+        const auto &position = config->position;
         debugLocation(position);
         debugLocation(from);
 
@@ -156,16 +172,21 @@ struct G1Command : public Command {
         debugln(maxProgressChange);
     }
 
-    //! Return true on success and when the command should be skipped
-    bool init() override {
-        using namespace globals;
+    Status init(globals::Config &config) override {
+        this->config = &config;
+        const auto &position = config.position;
+
         debugln("started linear motion");
 
-        if (absolutePositioning) { // Absolute positioning
+        if (_positioningType == PositioningType::Default) {
+            _positioningType = config.positioningType;
+        }
+
+        if (_positioningType == PositioningType::Absolute) {
             target = getTargetFromArguments();
             if (target.x == position.x && target.y == position.y &&
                 target.z == position.z && target.e == position.e) {
-                return false;
+                return Finished;
                 debugln(F("Already at target position"));
             }
         }
@@ -190,18 +211,18 @@ struct G1Command : public Command {
         }
 
         if (!maxDimensionLength) {
-            return false;
+            return Finished;
         }
 
         maxProgressChange = operationLength / maxDimensionLength;
 
         printInitDebugInfo();
 
-        return true;
+        return Running;
     }
 };
 
 } // namespace
-std::unique_ptr<Command> createG1Command() {
-    return make_unique<G1Command>();
+std::unique_ptr<Command> createG1Command(PositioningType positioningType) {
+    return make_unique<G1Command>(positioningType);
 }

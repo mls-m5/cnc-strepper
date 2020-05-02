@@ -16,6 +16,7 @@ void Command::parseArguments() {
             // Wait for input
         }
         c = Serial.read();
+        c = toupper(c);
         if (c >= 'A' && c <= 'Z') {
             Argument argument;
             argument.name = c;
@@ -47,13 +48,19 @@ void Command::print() {
     case 'G':
         switch (number) {
         case 1:
-            debug("linear motion");
-            if (absolutePositioning) {
-                debug(" absolute positioning");
-            }
-            else {
-                debug(" relative positioning");
-            }
+            debugln("linear motion");
+            //            switch (positioningType) {
+            //            case PositioningType::Absolute:
+            //                debug(" absolute positioning");
+            //                break;
+            //            case PositioningType::Relative:
+            //                debug(" relative positioning");
+            //                break;
+            //            }
+            break;
+        case 2:
+        case 3:
+            debugln("arc movement");
             break;
         }
         break;

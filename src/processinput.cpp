@@ -21,11 +21,11 @@ unique_ptr<Command> createCommand(int c, int number) {
     case 'G':
         switch (number) {
         case 1:
-            return createG1Command();
+            return createG1Command(PositioningType::Default);
         case 90:
-            return createPositionCommand(true);
+            return createPositionCommand(PositioningType::Absolute);
         case 91:
-            return createPositionCommand(false);
+            return createPositionCommand(PositioningType::Relative);
         }
         break;
     }
@@ -40,6 +40,8 @@ void processCommand(int c) {
     // stored here
     argument.name = 0;
 
+    c = toupper(c);
+
     if ((c >= 'X' && c <= 'Z') || (c >= 'I' && c <= 'K')) {
         // When only arguments is given the last argument is reused
         argument.name = c;
@@ -48,15 +50,15 @@ void processCommand(int c) {
             argument.hasValue = false;
         }
 
-        c = previousCommand;
-        number = previousCommandNumber;
+        c = config.previousCommand;
+        number = config.previousCommandNumber;
         debugln("reusing previous command ");
 
-        debugln(previousCommandNumber);
+        debugln(config.previousCommandNumber);
     }
     else {
-        previousCommand = c;
-        previousCommandNumber = number = Serial.parseInt();
+        config.previousCommand = c;
+        config.previousCommandNumber = number = Serial.parseInt();
     }
 
     auto command = createCommand(c, number);
@@ -72,7 +74,7 @@ void processCommand(int c) {
         command->parseArguments();
 
         command->print();
-        commands.push(move(command));
+        config.commands.push(move(command));
     }
 }
 
