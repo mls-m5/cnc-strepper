@@ -84,8 +84,19 @@ void pinMode(int pin, int mode) {
     cout << "setting mode for " << pin << " to " << mode << endl;
 }
 
+const auto helpText = R"_(
+G0 Linear fast move (not implemented)
+G1 Linear slow move
+G2 Clockwise arc move (X,Y,Z) -> target. (I,J,K) --> Center point
+G2 Counter-clockwise arc move  -||-
+G90 Absolute positioning
+G91 Relative positioning
+                      )_";
+
 int main(int /*argc*/, char const ** /*argv*/) {
     using namespace std::chrono_literals;
+
+    cout << helpText << endl;
 
     Gui gui;
 

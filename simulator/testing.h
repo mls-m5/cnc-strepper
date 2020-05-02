@@ -68,7 +68,6 @@ public:
     }
 
     bool available() {
-        //		std::unique_lock<std::mutex> g(iomutex);
         return !buffer.empty();
     }
 
