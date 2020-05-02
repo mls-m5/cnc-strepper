@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "globals.h"
 #include "singlecommand.h"
 
 #include <memory>
@@ -12,3 +13,5 @@ std::unique_ptr<Command> createG1Command(
     PositioningType PositioningType = PositioningType::Default);
 
 enum class ArcDirection { Clockwise, CounterClockwise };
+
+std::unique_ptr<Command> createArcCommand(ArcDirection);
