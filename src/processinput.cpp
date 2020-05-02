@@ -52,8 +52,6 @@ void processCommand(int c) {
         number = previousCommandNumber;
         debugln("reusing previous command ");
 
-        //                char prevString[] = {(char)c, 0};
-        debug(prevString);
         debugln(previousCommandNumber);
     }
     else {

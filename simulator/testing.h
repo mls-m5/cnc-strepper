@@ -10,11 +10,11 @@
 
 #define F(x) x
 
-#include <chrono>
+#include "debug.h"
+
 #include <iostream>
 #include <mutex>
 #include <queue>
-#include <string>
 #include <thread>
 
 using std::cin;
@@ -30,7 +30,7 @@ public:
 
     template <class T>
     void println(T value) {
-        cout << value << endl;
+        cout << value << "\n";
     }
 
     int parseInt() {
@@ -79,15 +79,18 @@ public:
 
     std::queue<char> buffer;
 
+    void pushInput(std::string text) {
+        std::unique_lock<std::mutex> g(iomutex);
+        for (auto c : text) {
+            buffer.push(c);
+        }
+    }
+
     void startThread() {
         iothread = std::thread([this]() {
             std::string line;
             while (std::getline(cin, line)) {
-                std::unique_lock<std::mutex> g(iomutex);
-                for (auto c : line) {
-                    buffer.push(c);
-                }
-                buffer.push(10); // Newline
+                pushInput(line + "\n");
             }
             isRunning = false; // Close the program when stdin ends
         });
@@ -108,37 +111,6 @@ unsigned long micros();
 #define HIGH 1
 #define INPUT 0
 #define OUTPUT 1
-
-class StepperMock {
-    std::string _name;
-    float _angle = 0;
-    bool _direction = 1;
-    bool _tick = 0;
-
-public:
-    StepperMock(const char *name) : _name(name) {}
-
-    void setDir(bool val) {
-        _direction = val;
-    }
-
-    void setPin(bool val) {
-        if (_tick != val) {
-            _angle += (_direction) ? 1. / 300 : -1. / 300;
-            cout << "new angle " << _name << " = " << _angle << endl;
-        }
-        _tick = val;
-    }
-
-    auto angle() {
-        return _angle;
-    }
-};
-
-namespace {
-
-StepperMock stepper[4] = {"X", "Y", "Z", "E"};
-}
 
 void digitalWrite(int pin, int state);
 

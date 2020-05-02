@@ -6,33 +6,43 @@
 
 SerialImpl Serial;
 
-int main(int /*argc*/, char const ** /*argv*/) {
-    using namespace std::chrono_literals;
+namespace {
 
-    Gui gui;
+class StepperMock {
+    std::string _name;
+    float _angle = 0;
+    bool _direction = 1;
+    bool _tick = 0;
 
-    setup();
+public:
+    StepperMock(const char *name) : _name(name) {}
 
-    Serial.startThread();
+    void setDir(bool val) {
+        _direction = val;
+    }
 
-    std::thread loopThread([&]() {
-        while (Serial.isRunning) {
-            loop();
-            std::this_thread::sleep_for(
-                1ms); // Prevent program from using 100% cpu
-                      // this should make the loop to slow
-            //		std::this_thread::sleep_for(10us); // Prevent program
-            // from using 100% cpu this should not be any problem
-
-            gui.setPosition(
-                stepper[0].angle(), stepper[1].angle(), stepper[2].angle());
+    void setPin(bool val) {
+        if (_tick == val) {
+            return;
         }
-    });
 
-    loopThread.detach();
+        _tick = val;
 
-    return gui.run();
-}
+        if (val == 0) {
+            return; // Only trigger on rising edge
+        }
+        _angle += (_direction) ? 1. / 300 : -1. / 300;
+        debugln("new angle " + _name + " = " + std::to_string(_angle));
+    }
+
+    auto angle() {
+        return _angle;
+    }
+};
+
+StepperMock stepper[4] = {"X", "Y", "Z", "E"};
+
+} // namespace
 
 unsigned long micros() {
     using namespace std::chrono;
@@ -72,4 +82,33 @@ void digitalWrite(int pin, int state) {
 
 void pinMode(int pin, int mode) {
     cout << "setting mode for " << pin << " to " << mode << endl;
+}
+
+int main(int /*argc*/, char const ** /*argv*/) {
+    using namespace std::chrono_literals;
+
+    Gui gui;
+
+    setup();
+
+    Serial.startThread();
+
+    std::thread loopThread([&]() {
+        while (Serial.isRunning) {
+            loop();
+            std::this_thread::sleep_for(
+                1ms); // Prevent program from using 100% cpu
+                      // this should make the loop to slow
+            //		std::this_thread::sleep_for(10us); // Prevent program
+            // from using 100% cpu this should not be any problem
+
+            gui.setPosition(
+                stepper[0].angle(), stepper[1].angle(), stepper[2].angle());
+        }
+        gui.stop();
+    });
+
+    loopThread.detach();
+
+    return gui.run();
 }

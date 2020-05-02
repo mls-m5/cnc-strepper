@@ -7,6 +7,7 @@
 #include "matgui/progressview.h"
 #include "matgui/textentry.h"
 #include "matgui/window.h"
+#include "testing.h"
 
 #include <iostream>
 #include <sstream>
@@ -48,24 +49,36 @@ struct Gui::Impl {
         window.addChild(_xView = new ProgressView());
         window.addChild(_yView = new ProgressView());
         window.addChild(_zView = new ProgressView());
+
+        for (auto view : {_xView, _yView, _zView}) {
+            view->weight(.2);
+        }
+
         window.addChild(_positionView = new PositionView);
-        //        window.addChild(_textEntry = new TextEntry);
+        window.addChild(_textEntry = new TextEntry);
+
+        _textEntry->height(30);
+        _textEntry->heightFlags(View::VIEW_FIXED);
+
+        window.refresh();
 
         _xView->linear(0, 30);
         _yView->linear(0, 30);
         _zView->linear(0, 10);
 
-        //        cin.rdbuf(cinEmulation.rdbuf());
-
-        //        _textEntry->submit.connect([=]() {
-        //            cinEmulation << _textEntry->text() + "\n";
-        //            _textEntry->text("");
-        //        });
+        _textEntry->submit.connect([this]() {
+            Serial.pushInput(_textEntry->text() + "\n");
+            _textEntry->text("");
+        });
     }
 
     int run() {
         application.mainLoop();
         return 0;
+    }
+
+    void stop() {
+        Application::quit();
     }
 
     void setPosition(double x, double y, double z) {
@@ -88,19 +101,21 @@ private:
 
     double _x = 0, _y = 0, _z = 0;
 
-    ProgressView *_xView;
-    ProgressView *_yView;
-    ProgressView *_zView;
-    PositionView *_positionView;
-    TextEntry *_textEntry;
-
-    //    std::stringstream cinEmulation;
+    ProgressView *_xView = nullptr;
+    ProgressView *_yView = nullptr;
+    ProgressView *_zView = nullptr;
+    PositionView *_positionView = nullptr;
+    TextEntry *_textEntry = nullptr;
 };
 
 Gui::Gui() : _impl(make_unique<Gui::Impl>()) {}
 
 int Gui::run() {
     return _impl->run();
+}
+
+void Gui::stop() {
+    _impl->stop();
 }
 
 void Gui::setPosition(double x, double y, double z) {

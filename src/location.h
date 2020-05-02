@@ -11,7 +11,11 @@ struct Location {
         return (&x)[index];
     }
 
-    size_t size() {
+    long operator[](int index) const {
+        return (&x)[index];
+    }
+
+    size_t size() const {
         return 4;
     }
 };

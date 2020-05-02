@@ -26,6 +26,8 @@ struct Command {
 
     float getArgumentValue(char name, float def, float multiplier);
 
+    int getArgumentValueInt(char name, int def, int multiplier);
+
     void print();
 
     virtual bool operator()(int dt) = 0;

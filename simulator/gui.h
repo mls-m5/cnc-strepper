@@ -13,6 +13,8 @@ public:
 
     int run();
 
+    void stop();
+
 private:
     struct Impl;
     std::unique_ptr<struct Impl> _impl;

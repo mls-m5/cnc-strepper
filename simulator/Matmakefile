@@ -1,7 +1,11 @@
 
-config += c++14
+config +=
+   c++14
+   Wall
 
 libs = -pthread -lGL -lSDL2 -lSDL2_image
+
+define += DEBUG
 
 includes += matgui/include ../src ../simulator
 

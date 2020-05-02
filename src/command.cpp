@@ -72,6 +72,16 @@ float Command::getArgumentValue(char name, float def, float multiplier) {
     }
 }
 
+int Command::getArgumentValueInt(char name, int def, int multiplier) {
+    auto arg = getArgument(name);
+    if (arg) {
+        return multiplier * arg->value;
+    }
+    else {
+        return def;
+    }
+}
+
 float Command::getArgumentValue(char name, float def) {
     auto arg = getArgument(name);
     if (arg) {
