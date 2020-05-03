@@ -6,7 +6,7 @@
 
 template <typename T>
 struct LocationT {
-    T x, y, z, e;
+    T x, y, z;
 
     T &operator[](int index) {
         return (&x)[index];
@@ -26,7 +26,7 @@ struct LocationT {
     }
 
     size_t size() const {
-        return 4;
+        return 3;
     }
 };
 

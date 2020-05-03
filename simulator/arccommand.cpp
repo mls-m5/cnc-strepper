@@ -57,8 +57,10 @@ struct ArcCommand : public Command {
         auto dy = _from.y - _pivot.y;
         _radius = sqrt(dx * dx + dy * dy);
         _fromAngle = atan2(dy, dx);
+
         auto tdx = _target.x - _pivot.x;
         auto tdy = _target.y - _pivot.y;
+        _radius2 = sqrt(tdx * tdx + tdy * tdy);
         _targetAngle = atan2(tdy, tdx);
         _differenceAngle = _targetAngle - _fromAngle;
         if (_direction == ArcDirection::Clockwise) {
@@ -72,7 +74,8 @@ struct ArcCommand : public Command {
             }
         }
 
-        _numStep = static_cast<int>(_radius * abs(_differenceAngle));
+        _numStep = static_cast<int>((_radius + _radius2) / 2.f *
+                                    abs(_differenceAngle));
         _numStep = max(_numStep, 8);
     }
 
@@ -104,10 +107,11 @@ struct ArcCommand : public Command {
         auto numStepf = _numStep;
 
         auto progress = (stepf + 1.) / numStepf;
+        auto radius = (1.f - progress) * _radius + progress * _radius2;
 
         auto angle = _fromAngle + _differenceAngle * progress;
-        auto x = _pivot.x + _radius * cos(angle);
-        auto y = _pivot.y + _radius * sin(angle);
+        auto x = _pivot.x + radius * cos(angle);
+        auto y = _pivot.y + radius * sin(angle);
         auto z = _from.z + progress * (_target.z - _from.z);
 
         auto command = createG1Command(PositioningType::Absolute,
@@ -151,6 +155,7 @@ struct ArcCommand : public Command {
     Locationf _pivot;
     Locationf _lastFrom;
     float _radius;
+    float _radius2;
     float _fromAngle = 0;
     float _targetAngle = 0;
     float _differenceAngle = 0;

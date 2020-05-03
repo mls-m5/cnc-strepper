@@ -129,7 +129,6 @@ public:
             .x = getArgumentValueInt('X', position.x, stepsPerMM[0]),
             .y = getArgumentValueInt('Y', position.y, stepsPerMM[1]),
             .z = getArgumentValueInt('Z', position.z, stepsPerMM[2]),
-            .e = getArgumentValueInt('E', position.e, stepsPerMM[3]),
         };
     }
 
@@ -140,7 +139,6 @@ public:
             .x = position.x + getArgumentValueInt('X', 0, stepsPerMM[0]),
             .y = position.y + getArgumentValueInt('Y', 0, stepsPerMM[1]),
             .z = position.z + getArgumentValueInt('Z', 0, stepsPerMM[2]),
-            .e = position.e + getArgumentValueInt('E', 0, stepsPerMM[3]),
         };
     }
 
@@ -187,7 +185,7 @@ public:
         if (_positioningType == PositioningType::Absolute) {
             _target = getTargetFromArguments();
             if (_target.x == position.x && _target.y == position.y &&
-                _target.z == position.z && _target.e == position.e) {
+                _target.z == position.z) {
                 return Finished;
                 debugln(F("Already at target position"));
             }
