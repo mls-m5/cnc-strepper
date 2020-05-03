@@ -37,7 +37,6 @@ extern const std::array<int, 4> stepsPerMM;
 extern const std::array<int, 4> maxSpeed;
 
 struct Config {
-
     PositioningType positioningType;
 
     Location position;
@@ -46,6 +45,9 @@ struct Config {
     int previousCommandNumber;
 
     std::queue<std::unique_ptr<class Command>> commands;
+
+    //! Convert stepp-position to float and return it
+    Locationf getFloatPosition();
 };
 
 extern Config config;

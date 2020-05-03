@@ -22,6 +22,10 @@ unique_ptr<Command> createCommand(int c, int number) {
         switch (number) {
         case 1:
             return createG1Command(PositioningType::Default);
+        case 2:
+            return createArcCommand(ArcDirection::Clockwise);
+        case 3:
+            return createArcCommand(ArcDirection::CounterClockwise);
         case 90:
             return createPositionCommand(PositioningType::Absolute);
         case 91:
@@ -75,6 +79,10 @@ void processCommand(int c) {
 
         command->print();
         config.commands.push(move(command));
+    }
+    else {
+        while (Serial.read() != '\n') {
+        } // Skip the rest of the line
     }
 }
 

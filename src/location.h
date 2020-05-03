@@ -4,18 +4,31 @@
 
 #include <cstddef>
 
-struct Location {
-    long x, y, z, e;
+template <typename T>
+struct LocationT {
+    T x, y, z, e;
 
-    long &operator[](int index) {
+    T &operator[](int index) {
         return (&x)[index];
     }
 
-    long operator[](int index) const {
+    T operator[](int index) const {
         return (&x)[index];
+    }
+
+    //! CCompare positions of the two LocationTs
+    bool operator==(const LocationT &other) const {
+        return x == other.x && y == other.y && z == other.z;
+    }
+
+    bool operator!=(const LocationT &other) const {
+        return !((*this) == other);
     }
 
     size_t size() const {
         return 4;
     }
 };
+
+typedef LocationT<long> Location;
+typedef LocationT<float> Locationf;

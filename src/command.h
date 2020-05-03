@@ -5,15 +5,22 @@
 #include <vector>
 
 struct Argument {
-    char name;
-    bool hasValue = true;
+    Argument() = default;
+
+    Argument(char name) : name(name) {}
+    Argument(char name, float value)
+        : name(name), hasValue(true), value(value) {}
+
+    char name = 0;
+    bool hasValue = false;
     float value = 0;
 };
 
 namespace globals {
 
 class Config;
-}
+
+} // namespace globals
 
 struct Command {
     enum Status { Finished, Running };
@@ -39,6 +46,6 @@ struct Command {
 
     virtual Status operator()(int dt) = 0;
 
-    //! @returns true if success, returns false if command should be skipped
+    //! To be runned once just before starting to execute the command
     virtual Status init(globals::Config &) = 0;
 };
