@@ -81,6 +81,7 @@ void processCommand(int c) {
 
         command->print();
         config.commands.push(move(command));
+        Serial.println("OK");
     }
     else {
         while (Serial.read() != '\n') {

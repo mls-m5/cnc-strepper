@@ -113,6 +113,7 @@ public:
                 oldValues[i] = stepValue;
                 // Perform single step
                 digitalWrite(axisPins[i], HIGH);
+                delayMicroseconds(3);
                 digitalWrite(axisPins[i], LOW);
             }
         }

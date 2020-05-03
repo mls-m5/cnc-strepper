@@ -123,3 +123,8 @@ int main(int /*argc*/, char const ** /*argv*/) {
 
     return gui.run();
 }
+
+void delayMicroseconds(long us) {
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(1us);
+}
