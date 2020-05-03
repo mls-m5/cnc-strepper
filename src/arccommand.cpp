@@ -36,20 +36,11 @@ struct ArcCommand : public Command {
             };
         }
 
-        if (_positioningType == PositioningType::Absolute) {
-            _pivot = {
-                .x = getArgumentValue('I', _from[0]),
-                .y = getArgumentValue('J', _from[1]),
-                .z = getArgumentValue('K', _from[2]),
-            };
-        }
-        else {
-            _pivot = {
-                .x = _from[0] + getArgumentValue('I', 0),
-                .y = _from[1] + getArgumentValue('J', 0),
-                .z = _from[2] + getArgumentValue('K', 0),
-            };
-        }
+        _pivot = {
+            .x = _from[0] + getArgumentValue('I', 0),
+            .y = _from[1] + getArgumentValue('J', 0),
+            .z = _from[2] + getArgumentValue('K', 0),
+        };
     }
 
     void calculateAngles() {
@@ -63,7 +54,7 @@ struct ArcCommand : public Command {
         _radius2 = sqrt(tdx * tdx + tdy * tdy);
         _targetAngle = atan2(tdy, tdx);
         _differenceAngle = _targetAngle - _fromAngle;
-        if (_direction == ArcDirection::Clockwise) {
+        if (_direction == ArcDirection::CounterClockwise) {
             while (_differenceAngle < 0) {
                 _differenceAngle += TWO_PI;
             }
@@ -77,26 +68,6 @@ struct ArcCommand : public Command {
         _numStep = static_cast<int>((_radius + _radius2) / 2.f *
                                     abs(_differenceAngle));
         _numStep = max(_numStep, 8);
-    }
-
-    Status init(globals::Config &config) override {
-        _config = &config;
-
-        if (_positioningType == PositioningType::Default) {
-            _positioningType = config.positioningType;
-        }
-
-        setTargetPosition();
-
-        if (_target == _from) {
-            return Status::Finished;
-        }
-
-        calculateAngles();
-
-        _linearCommand = generateNextCommand();
-
-        return Running;
     }
 
     unique_ptr<Command> generateNextCommand() {
@@ -126,6 +97,27 @@ struct ArcCommand : public Command {
         }
 
         return command;
+    }
+
+public:
+    Status init(globals::Config &config) override {
+        _config = &config;
+
+        if (_positioningType == PositioningType::Default) {
+            _positioningType = config.positioningType;
+        }
+
+        setTargetPosition();
+
+        if (_target == _from) {
+            return Status::Finished;
+        }
+
+        calculateAngles();
+
+        _linearCommand = generateNextCommand();
+
+        return Running;
     }
 
     Status operator()(int dt) override {

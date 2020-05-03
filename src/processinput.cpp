@@ -20,6 +20,8 @@ unique_ptr<Command> createCommand(int c, int number) {
     switch (c) {
     case 'G':
         switch (number) {
+        case 0:
+            return createG1Command(PositioningType::Default);
         case 1:
             return createG1Command(PositioningType::Default);
         case 2:

@@ -21,12 +21,19 @@ struct PositionView : View {
     PositionView() {
         height(500);
         linePaint.line.color(1, 1, 1);
+        gridPaint.line.color(0, 0, 1);
     }
 
     void draw() override {
-        auto lx = View::x() + x * 10.;
-        auto ly = View::y() + y * 10.;
-        linePaint.drawRect(lx - 5, ly - 5, 5, 5);
+        auto originX = View::x() + width() / 2;
+        auto originY = View::y() + height() / 2;
+        auto lx = originX + x * 10.;
+        auto ly = originY + y * 10.;
+
+        gridPaint.drawLine(originX, View::y(), originX, View::y() + height());
+        gridPaint.drawLine(View::x(), originY, View::x() + width(), originY);
+
+        linePaint.drawRect(lx - 5 + z, ly - 5 - z * 5, 10, 10);
         linePaint.drawLine(lx, ly, lx + z, ly - z * 5);
     }
 
@@ -37,6 +44,7 @@ struct PositionView : View {
     }
 
     Paint linePaint;
+    Paint gridPaint;
 
     double x, y, z;
 };
@@ -70,6 +78,8 @@ struct Gui::Impl {
             Serial.pushInput(_textEntry->text() + "\n");
             _textEntry->text("");
         });
+
+        window.style.fill.color(0, 0, 0, .01);
     }
 
     int run() {
@@ -92,6 +102,8 @@ struct Gui::Impl {
             _zView->value(z);
 
             _positionView->setValues(x, y, z);
+
+            _positionView->invalidate();
         }
     }
 

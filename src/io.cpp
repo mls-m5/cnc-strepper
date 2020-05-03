@@ -21,6 +21,8 @@ float readFloat() {
 }
 
 void printChar(char c) {
+#ifdef DEBUG
     char output[2] = {(char)c, (char)0};
     debug(output);
+#endif
 }
